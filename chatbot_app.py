@@ -8,7 +8,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import OpenAI
 
 # Set your OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or "sk-..."  # Replace or use env
+OPENAI_API_KEY = os.getenv("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") or "sk-..."  # Replace or use env
 
 st.title("📄 Chat with your File")
 
