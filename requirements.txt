@@ -1,11 +1,11 @@
 streamlit
 openai
-langchain
-langchain-community
-PyPDF2
-faiss-cpu
-tiktoken
+langchain==0.0.232
+langchain-community==0.0.28
 pandas
 openpyxl
+faiss-cpu
+tiktoken
+PyPDF2
 
 
