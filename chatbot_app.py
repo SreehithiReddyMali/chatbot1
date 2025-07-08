@@ -7,8 +7,8 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import OpenAI
 
-# Get OpenAI key from env or Streamlit secrets
-OPENAI_API_KEY = os.getenv("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") or st.secrets.get("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", "")
+# You must set your OPENAI_API_KEY in environment or Streamlit secrets,
+# no need to pass it explicitly to LangChain classes
 
 st.title("📊 Chat with your Excel file")
 
@@ -18,29 +18,26 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 def read_excel_to_text(file):
-    # Read Excel file into a DataFrame
     df = pd.read_excel(file)
-    # Convert the entire DataFrame to a single string for processing
     return df.astype(str).agg(' '.join, axis=1).str.cat(sep=' ')
 
 if uploaded_file:
     raw_text = read_excel_to_text(uploaded_file)
 
-    # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
     )
     texts = text_splitter.split_text(raw_text)
 
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    embeddings = OpenAIEmbeddings()  # no key param
     db = FAISS.from_texts(texts, embeddings)
 
     user_input = st.text_input("Ask a question about the Excel data:")
 
     if user_input:
         docs = db.similarity_search(user_input)
-        llm = OpenAI(openai_api_key=OPENAI_API_KEY)
+        llm = OpenAI()  # no key param
         chain = load_qa_chain(llm, chain_type="stuff")
         response = chain.run(input_documents=docs, question=user_input)
 
@@ -51,4 +48,3 @@ if uploaded_file:
         st.markdown(f"**{sender}:** {message}")
 else:
     st.info("Please upload an Excel file to start chatting!")
-
