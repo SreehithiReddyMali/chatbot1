@@ -5,5 +5,7 @@ langchain-community
 PyPDF2
 faiss-cpu
 tiktoken
+pandas
+openpyxl
 
 
