@@ -1,35 +1,62 @@
-# chatbot_app.py
 import streamlit as st
+import PyPDF2
+import os
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains.question_answering import load_qa_chain
+from langchain.llms import OpenAI
 
-# Simple rule-based response function
-def get_bot_response(user_input):
-    user_input = user_input.lower()
-    if "hello" in user_input or "hi" in user_input:
-        return "Hello! How can I help you today?"
-    elif "how are you" in user_input:
-        return "I'm doing great! How can I assist you?"
-    elif "bye" in user_input:
-        return "Goodbye! Talk to you soon."
-    else:
-        return "Hmm, I don't understand that. Try saying something else."
+# Set your OpenAI API key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or "sk-..."  # Replace or use env
 
-# App UI
-st.title("💬 Chatbot with Streamlit")
-st.write("Type something to chat with the bot.")
+st.title("📄 Chat with your File")
 
-# Initialize chat history
+# Upload file
+uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
+
+# Store chat history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Input box
-user_input = st.text_input("You:", key="input")
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
 
-# Generate and store responses
-if user_input:
-    response = get_bot_response(user_input)
-    st.session_state.chat_history.append(("You", user_input))
-    st.session_state.chat_history.append(("Bot", response))
+if uploaded_file:
+    raw_text = extract_text_from_pdf(uploaded_file)
 
-# Display conversation
-for sender, message in st.session_state.chat_history:
-    st.markdown(f"**{sender}:** {message}")
+    # Chunk the text
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+    texts = text_splitter.split_text(raw_text)
+
+    # Embed text and create FAISS index
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    docsearch = FAISS.from_texts(texts, embeddings)
+
+    # Input box
+    user_input = st.text_input("Ask a question about the document:")
+
+    if user_input:
+        # Search similar chunks
+        docs = docsearch.similarity_search(user_input)
+
+        # Load QA chain
+        llm = OpenAI(openai_api_key=OPENAI_API_KEY, temperature=0)
+        chain = load_qa_chain(llm, chain_type="stuff")
+
+        response = chain.run(input_documents=docs, question=user_input)
+
+        st.session_state.chat_history.append(("You", user_input))
+        st.session_state.chat_history.append(("Bot", response))
+
+    # Display chat history
+    for sender, msg in st.session_state.chat_history:
+        st.markdown(f"**{sender}:** {msg}")
+
