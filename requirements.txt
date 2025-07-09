@@ -1,7 +1,7 @@
 streamlit
 openai
 langchain==0.1.16
-langchain-community==0.0.80
+langchain-community==0.2.27
 pandas
 openpyxl
 faiss-cpu
