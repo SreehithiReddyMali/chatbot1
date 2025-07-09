@@ -2,5 +2,4 @@ streamlit==1.26.0
 openai==1.13.3
 langchain==0.1.16
 langchain-community==0.0.35
-
-
+pillow==10.2.0
